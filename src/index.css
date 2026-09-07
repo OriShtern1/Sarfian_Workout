@@ -27,4 +27,10 @@ button { cursor: pointer; }
   50% { box-shadow: 0 0 18px rgba(103, 232, 249, 0.16); }
 }
 
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
 .bg-cyan-300 { animation: pulseGlow 3s ease-in-out infinite; }

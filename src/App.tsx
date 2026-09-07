@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Activity,
+  ArrowLeft,
   Award,
   Bell,
   CalendarDays,
@@ -10,8 +11,13 @@ import {
   Dumbbell,
   Droplets,
   Edit3,
+  Eye,
+  EyeOff,
   Flame,
   LayoutDashboard,
+  Lock,
+  LogOut,
+  Mail,
   Menu,
   MoreHorizontal,
   Pause,
@@ -19,9 +25,11 @@ import {
   Plus,
   Save,
   Settings2,
+  Shield,
   TimerReset,
   TrendingUp,
   Trophy,
+  UserRound,
   Users,
   Utensils,
   X,
@@ -73,6 +81,7 @@ const trainees = ['דניאל אברוך', 'מאיה לוי', 'איתי כהן',
 const iconMap: Record<string, LucideIcon> = { גב: Activity, 'יד קדמית': Zap, רגליים: Dumbbell, 'גב תחתון': TrendingUp };
 
 function App() {
+  const [loggedIn, setLoggedIn] = useState(false);
   const [role, setRole] = useState<Role>('trainee');
   const [tab, setTab] = useState<TraineeTab>('workout');
   const [modal, setModal] = useState<Modal>(null);
@@ -92,9 +101,13 @@ function App() {
   const totalSets = exercises.length * 3;
   const workoutProgress = Math.round((completedSets / totalSets) * 100);
 
+  if (!loggedIn) {
+    return <LoginScreen onLogin={(selectedRole) => { setRole(selectedRole); setLoggedIn(true); }} />;
+  }
+
   return (
     <div dir="rtl" className="min-h-screen bg-[#090d14] text-slate-100 selection:bg-cyan-400 selection:text-slate-950">
-      <TopBar role={role} onRoleChange={setRole} />
+      <TopBar role={role} onRoleChange={setRole} onLogout={() => setLoggedIn(false)} />
       {role === 'trainee' ? (
         <TraineeView tab={tab} setTab={setTab} modal={modal} setModal={setModal} completed={completed} setCompleted={setCompleted} weights={weights} setWeights={setWeights} eaten={eaten} setEaten={setEaten} seconds={seconds} timerRunning={timerRunning} setTimerRunning={setTimerRunning} workoutProgress={workoutProgress} />
       ) : (
@@ -104,7 +117,83 @@ function App() {
   );
 }
 
-function TopBar({ role, onRoleChange }: { role: Role; onRoleChange: (role: Role) => void }) {
+function LoginScreen({ onLogin }: { onLogin: (role: Role) => void }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginRole, setLoginRole] = useState<Role>('trainee');
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [shake, setShake] = useState(false);
+
+  const validate = () => {
+    const next: { email?: string; password?: string } = {};
+    if (!email.trim()) next.email = 'שדה חובה';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !/^[\u05D0-\u05EA\s]+$/.test(email)) next.email = 'אימייל או שם משתמש לא תקין';
+    if (!password) next.password = 'שדה חובה';
+    else if (password.length < 4) next.password = 'לפחות 4 תווים';
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (validate()) onLogin(loginRole);
+    else { setShake(true); window.setTimeout(() => setShake(false), 500); }
+  };
+
+  return (
+    <div dir="rtl" className="relative grid min-h-screen place-items-center overflow-hidden bg-[#090d14] px-4 py-10">
+      <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
+      <div className="absolute -bottom-32 -left-16 h-72 w-72 rounded-full bg-blue-600/10 blur-3xl" />
+      <div className="relative w-full max-w-sm">
+        <div className="mb-7 text-center">
+          <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-cyan-300 to-blue-600 text-slate-950 shadow-xl shadow-cyan-500/20"><Activity size={28} strokeWidth={2.5} /></div>
+          <h1 className="text-xl font-black tracking-tight text-white">Workout <span className="text-cyan-300">-</span> Fitness <span className="text-cyan-300">-</span> Lifestyle</h1>
+          <p className="mt-2 text-xs text-slate-500">התחבר כדי להמשיך להתקדם</p>
+        </div>
+        <div className="mb-5 flex gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-1.5">
+          <button onClick={() => setLoginRole('trainee')} className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-black transition ${loginRole === 'trainee' ? 'bg-cyan-300 text-slate-950 shadow-lg shadow-cyan-400/10' : 'text-slate-400 hover:text-white'}`}><UserRound size={15} /> מתאמן</button>
+          <button onClick={() => setLoginRole('coach')} className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-black transition ${loginRole === 'coach' ? 'bg-cyan-300 text-slate-950 shadow-lg shadow-cyan-400/10' : 'text-slate-400 hover:text-white'}`}><Shield size={15} /> מאמן</button>
+        </div>
+        <form onSubmit={handleSubmit} className={`rounded-3xl border border-white/10 bg-[#111824] p-6 shadow-2xl shadow-black/30 ${shake ? 'animate-[shake_0.4s_ease]' : ''}`}>
+          <div className="mb-4">
+            <label className="mb-1.5 block text-[11px] font-bold text-slate-400">אימייל או שם משתמש</label>
+            <div className={`flex items-center gap-2 rounded-xl border bg-black/20 px-3 transition ${errors.email ? 'border-red-400/50' : 'border-white/10 focus-within:border-cyan-300/40'}`}>
+              <Mail size={15} className="shrink-0 text-slate-600" />
+              <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="daniel@example.com" className="w-full bg-transparent py-3 text-sm text-white outline-none placeholder:text-slate-700" />
+            </div>
+            {errors.email && <p className="mt-1.5 text-[10px] font-bold text-red-400">{errors.email}</p>}
+          </div>
+          <div className="mb-4">
+            <label className="mb-1.5 block text-[11px] font-bold text-slate-400">סיסמה</label>
+            <div className={`flex items-center gap-2 rounded-xl border bg-black/20 px-3 transition ${errors.password ? 'border-red-400/50' : 'border-white/10 focus-within:border-cyan-300/40'}`}>
+              <Lock size={15} className="shrink-0 text-slate-600" />
+              <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full bg-transparent py-3 text-sm text-white outline-none placeholder:text-slate-700" />
+              <button type="button" onClick={() => setShowPassword((v) => !v)} className="shrink-0 text-slate-600 transition hover:text-slate-300">{showPassword ? <EyeOff size={15} /> : <Eye size={15} />}</button>
+            </div>
+            {errors.password && <p className="mt-1.5 text-[10px] font-bold text-red-400">{errors.password}</p>}
+          </div>
+          <div className="mb-5 flex items-center justify-between">
+            <button type="button" onClick={() => setRemember((v) => !v)} className="flex items-center gap-2 text-[11px] font-bold text-slate-400">
+              <span className={`grid h-4 w-4 place-items-center rounded border transition ${remember ? 'border-cyan-300 bg-cyan-300 text-slate-950' : 'border-white/20 text-transparent'}`}><Check size={11} strokeWidth={3} /></span>
+              זכור אותי
+            </button>
+            <button type="button" className="text-[11px] font-bold text-cyan-300 transition hover:text-cyan-200">שכחתי סיסמה</button>
+          </div>
+          <button type="submit" className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-l from-cyan-300 to-blue-500 py-3.5 text-sm font-black text-slate-950 shadow-lg shadow-cyan-500/10 transition hover:-translate-y-0.5 hover:shadow-cyan-400/20">התחבר למערכת <ArrowLeft size={16} /></button>
+        </form>
+        <div className="my-5 flex items-center gap-3 text-[10px] font-bold text-slate-600"><span className="h-px flex-1 bg-white/10" /> כניסה מהירה לדמו <span className="h-px flex-1 bg-white/10" /></div>
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={() => onLogin('trainee')} className="flex flex-col items-center gap-1.5 rounded-2xl border border-white/10 bg-[#111824] p-3 text-center transition hover:border-cyan-300/30 hover:bg-cyan-300/[0.04]"><div className="grid h-9 w-9 place-items-center rounded-xl bg-cyan-300/10 text-cyan-300"><UserRound size={17} /></div><span className="text-[10px] font-black text-white">כמתאמן</span><span className="text-[9px] text-slate-500">דניאל אברוך</span></button>
+          <button onClick={() => onLogin('coach')} className="flex flex-col items-center gap-1.5 rounded-2xl border border-white/10 bg-[#111824] p-3 text-center transition hover:border-cyan-300/30 hover:bg-cyan-300/[0.04]"><div className="grid h-9 w-9 place-items-center rounded-xl bg-blue-400/10 text-blue-300"><Shield size={17} /></div><span className="text-[10px] font-black text-white">כמאמן</span><span className="text-[9px] text-slate-500">דניאל סרפיאן</span></button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TopBar({ role, onRoleChange, onLogout }: { role: Role; onRoleChange: (role: Role) => void; onLogout: () => void }) {
   return <header className="sticky top-0 z-40 border-b border-white/[0.07] bg-[#0b1019]/90 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-10">
     <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4">
       <div className="flex items-center gap-3">
@@ -115,9 +204,9 @@ function TopBar({ role, onRoleChange }: { role: Role; onRoleChange: (role: Role)
         <button onClick={() => onRoleChange('trainee')} className={`rounded-lg px-3 py-2 transition ${role === 'trainee' ? 'bg-cyan-300 text-slate-950 shadow-lg shadow-cyan-400/10' : 'text-slate-400 hover:text-white'}`}>מתאמן <span className="hidden sm:inline">(דניאל אברוך)</span></button>
         <button onClick={() => onRoleChange('coach')} className={`rounded-lg px-3 py-2 transition ${role === 'coach' ? 'bg-cyan-300 text-slate-950 shadow-lg shadow-cyan-400/10' : 'text-slate-400 hover:text-white'}`}>מאמן <span className="hidden sm:inline">(דניאל סרפיאן)</span></button>
       </div>
-      <div className="hidden items-center gap-3 sm:flex">
-        <button className="rounded-xl border border-white/10 p-2 text-slate-400 transition hover:border-cyan-300/40 hover:text-cyan-200"><Bell size={17} /></button>
-        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-slate-300 to-slate-500 p-[2px]"><div className="grid h-full w-full place-items-center rounded-full bg-[#121925] text-xs font-bold">דא</div></div>
+      <div className="flex items-center gap-2">
+        <button className="hidden rounded-xl border border-white/10 p-2 text-slate-400 transition hover:border-cyan-300/40 hover:text-cyan-200 sm:block"><Bell size={17} /></button>
+        <button onClick={onLogout} className="flex items-center gap-2 rounded-xl border border-red-400/20 bg-red-400/[0.06] px-3 py-2 text-xs font-black text-red-300 transition hover:border-red-400/40 hover:bg-red-400/10"><LogOut size={15} /><span className="hidden sm:inline">התנתק</span></button>
       </div>
     </div>
   </header>;
